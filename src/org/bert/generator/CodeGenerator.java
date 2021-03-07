@@ -2,12 +2,16 @@ package org.bert.generator;
 
 
 
+import org.bert.generator.common.FileConfig;
+import org.bert.generator.common.FileOperation;
 import org.bert.generator.common.GeneratorOptions;
 import org.bert.generator.common.SQLUtils;
 import org.bert.generator.core.CodeFactory;
+import org.bert.generator.core.DaoGeneratorCode;
 import org.bert.generator.core.DataBaseGeneratorCode;
-import org.bert.generator.core.XMLGeneratorCode;
+import org.bert.generator.demo.Test;
 import org.bert.generator.entity.Columns;
+import org.bert.generator.entity.Method;
 import org.bert.generator.entity.Table;
 
 import java.lang.reflect.Field;
@@ -23,25 +27,38 @@ public class CodeGenerator {
 
     private Table table = new Table();
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
         // 获取到对应的对象
         CodeGenerator codeGenerator = new CodeGenerator();
-        // 待生成的类全名称
-        codeGenerator.getParams(CodeGenerator.class);
-        codeGenerator.start("sys_model", "Model", GeneratorOptions.COUNT_XML_SQL);
+
+        Class clazz = Class.forName("类全名");
+
+        // 解析Class
+        codeGenerator.getParams(clazz);
+        codeGenerator.start(clazz);
     }
 
     /**
      * 启动工具
-     * @param dbName 需要生成的数据库名称
-     * @param xmlName xml名称，table中保留字段
-     * @param type 需要生成的SQL类型
      */
-    private void start(String dbName, String xmlName, String type) {
-        table.setTableName(dbName);
-        table.setXmlName(xmlName);
-        String sql = this.generatorCode(type);
-        System.out.println(sql);
+    private void start(Class clazz) {
+        // 获取类全名和类名
+        String simpleName = clazz.getSimpleName();
+        String name = clazz.getName();
+
+        table.setModelClassName(name);
+        table.setTableName("数据库表名称");
+        table.setXmlName(simpleName);
+        table.setMapperType(name + "Mapper");
+        // 这里写类全名称
+        table.setDaoPath("dao类全名");
+        String sql = this.generatorCode(GeneratorOptions.CREATE_ALL_XML_SQL);
+        String mapperMethod = this.generatorCode(GeneratorOptions.CREATE_MAPPER_CODE);
+
+        // 导出为XML
+        FileOperation.saveDataToFile(simpleName + FileConfig.FileNameType.XML_TYPE, sql, FileConfig.FilePathConfig.XML_PATH);
+        // 导出为Mapper.java
+        FileOperation.saveDataToFile(simpleName + FileConfig.FileNameType.MAPPER_JAVA_TYPE, mapperMethod, FileConfig.FilePathConfig.MAPPER_JAVA_PATH);
     }
 
     /**
@@ -85,23 +102,29 @@ public class CodeGenerator {
             CodeFactory codeFactory = new DataBaseGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.CREATE_TABLE);
         } else if (GeneratorOptions.CREATE_PARAMS.equals(type)) {
-            CodeFactory codeFactory = new XMLGeneratorCode();
+            CodeFactory codeFactory = new DaoGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.CREATE_PARAMS);
         } else if (GeneratorOptions.SELECT_XML_SQL.equals(type)) {
-            CodeFactory codeFactory = new XMLGeneratorCode();
+            CodeFactory codeFactory = new DaoGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.SELECT_XML_SQL);
         } else if (GeneratorOptions.DELETE_XML_SQL.equals(type)) {
-            CodeFactory codeFactory = new XMLGeneratorCode();
+            CodeFactory codeFactory = new DaoGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.DELETE_XML_SQL);
         } else if (GeneratorOptions.INSERT_XML_SQL.equals(type)) {
-            CodeFactory codeFactory = new XMLGeneratorCode();
+            CodeFactory codeFactory = new DaoGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.INSERT_XML_SQL);
         } else if (GeneratorOptions.UPDATE_XML_SQL.equals(type)) {
-            CodeFactory codeFactory = new XMLGeneratorCode();
+            CodeFactory codeFactory = new DaoGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.UPDATE_XML_SQL);
         } else if (GeneratorOptions.COUNT_XML_SQL.equals(type)) {
-            CodeFactory codeFactory = new XMLGeneratorCode();
+            CodeFactory codeFactory = new DaoGeneratorCode();
             return codeFactory.generatorCode(table, GeneratorOptions.COUNT_XML_SQL);
+        } else if (GeneratorOptions.CREATE_ALL_XML_SQL.equals(type)) {
+            CodeFactory codeFactory = new DaoGeneratorCode();
+            return codeFactory.generatorCode(table, GeneratorOptions.CREATE_ALL_XML_SQL);
+        } else if (GeneratorOptions.CREATE_MAPPER_CODE.equals(type)) {
+            CodeFactory codeFactory = new DaoGeneratorCode();
+            return codeFactory.generatorCode(table, GeneratorOptions.CREATE_MAPPER_CODE);
         }
         return "";
     }

@@ -12,7 +12,7 @@ SQL的操作主要是有一个SQLTemplate进行模版操作。这个就是我们
 
 当然为了统一管理，我这里GeneratorOptions特地把所有的（目前所支持的）操作做了个封装，所有的通过这个命令即可。
 
-![](./assets/Genetator.jpg)
+<img src="./assets/Genetator.jpg" style="zoom:80%;" />
 
 ## how to use it？
 
@@ -37,12 +37,37 @@ countXmlSql：生成countsql。
 主代码位于：org.bert.generator.CodeGenerator。
 
 ```java
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
         // 获取到对应的对象
         CodeGenerator codeGenerator = new CodeGenerator();
-        // 待生成的类全名称
-        codeGenerator.getParams("这里传入待生成的java对象");
-        codeGenerator.start("sys_model", "Model", GeneratorOptions.COUNT_XML_SQL);
+
+        Class clazz = Class.forName("类全名");
+
+        // 解析Class
+        codeGenerator.getParams(clazz);
+        codeGenerator.start(clazz);
+    }
+
+    /**
+     * 启动工具
+     */
+    private void start(Class clazz) {
+        // 获取类全名和类名
+        String simpleName = clazz.getSimpleName();
+        String name = clazz.getName();
+				// 设定初始参数
+        table.setModelClassName(name);
+        table.setTableName("数据库表名称");
+        table.setXmlName(simpleName);
+        table.setMapperType(name + "Mapper");
+        // 这里写类全名称
+        table.setDaoPath("dao类全名");
+        String sql = this.generatorCode(GeneratorOptions.CREATE_ALL_XML_SQL);
+        String mapperMethod = this.generatorCode(GeneratorOptions.CREATE_MAPPER_CODE);
+        // 导出为XML
+        FileOperation.saveDataToFile(simpleName + FileConfig.FileNameType.XML_TYPE, sql, FileConfig.FilePathConfig.XML_PATH);
+        // 导出为Mapper.java
+        FileOperation.saveDataToFile(simpleName + FileConfig.FileNameType.MAPPER_JAVA_TYPE, mapperMethod, FileConfig.FilePathConfig.MAPPER_JAVA_PATH);
     }
 ```
 
@@ -52,11 +77,18 @@ start：传入sql的表名称，基础的实体名称，想要进行的操作（
 
 ## to do list
 
-1）getParams支持填写类全名。
+1）getParams支持填写类全名 已支持。
 
-2）支持生成Mapper文件和XML实体文件。
+2）支持生成Mapper文件和XML实体文件 已支持。
 
 3）idea插件话，接入idea插件体系，支持UI界面。
+
+## update log
+
+时间：2021/3/7下午4:30:47
+
+- 支持类全名生成
+- 支持Mapper和XML生成
 
 ## end
 

@@ -15,7 +15,7 @@ public class SQLTemplate {
     public static String paramsTemplate(String params) {
         return "<sql id=\"Base_Column_List\">\n" +
                 params +
-                "</sql>";
+                "</sql>\n";
     }
 
     /**
@@ -32,7 +32,7 @@ public class SQLTemplate {
                                            String parameterType) {
         return "<select id=\"" + xmlName + "\" parameterType=\"" + parameterType + "\" resultType=\"" + resultType + "\">\n" +
                 sql +
-                "</select>";
+                "</select>\n";
     }
 
     /**
@@ -47,7 +47,7 @@ public class SQLTemplate {
                                            String parameterType) {
         return "    <delete id=\"" + xmlName + "\" parameterType=\"" + parameterType + "\">\n" +
                 sql +
-                "    </delete>";
+                "    </delete>\n";
     }
 
     /**
@@ -70,7 +70,7 @@ public class SQLTemplate {
                                            String parameterType) {
         return "    <update id=\"" + xmlName + "\" parameterType=\"" + parameterType + "\">\n" +
                 sql +
-                "    </update>";
+                "    </update>\n";
     }
 
     /**
@@ -85,6 +85,41 @@ public class SQLTemplate {
                                           String resultType) {
         return "<select id=\"" + xmlName + "\" resultType=\"" + resultType + "\">\n" +
                 sql +
-                "</select>";
+                "</select>\n";
+    }
+
+    /**
+     * XML文件主体
+     * @param sqlContent sql主体
+     * @param mapperType 返回的mapper类型
+     * @return fileContent
+     */
+    public static String XMLFileBodyTemplate(String sqlContent,
+                                             String mapperType) {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<!DOCTYPE mapper PUBLIC \"-//mybatis.org//DTD Mapper 3.0//EN\" \"http://mybatis.org/dtd/mybatis-3-mapper.dtd\">\n" +
+                "<mapper namespace=\"" + mapperType + "\">\n" +
+                sqlContent +
+                "</mapper>";
+    }
+
+    /**
+     * Mapper文件
+     * @param content 代码正文
+     * @param modelPath 对应类的模块
+     * @param className 类名称
+     * @return Mapper代码
+     */
+    public static String MapperTemplate(String content, String modelPath, String className) {
+        return "" +
+                "package org.scheduler.quartz.dao;\n" +
+                "\n" +
+                "import " + modelPath + ";\n" +
+                "\n" +
+                "import java.util.List;\n" +
+                "\n" +
+                "public interface " + className + "Mapper {\n" +
+                content +
+                "}";
     }
 }

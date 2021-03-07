@@ -1,6 +1,5 @@
 package org.bert.generator.core;
 
-
 import org.bert.generator.entity.Table;
 
 /**
@@ -9,4 +8,5 @@ import org.bert.generator.entity.Table;
 public interface CodeFactory {
 
     String generatorCode(Table table, String type);
+
 }

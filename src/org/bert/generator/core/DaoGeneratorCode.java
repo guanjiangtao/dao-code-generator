@@ -1,18 +1,21 @@
 package org.bert.generator.core;
 
 
+
 import org.bert.generator.common.GeneratorOptions;
 import org.bert.generator.common.SQLTemplate;
 import org.bert.generator.common.SQLUtils;
 import org.bert.generator.entity.Columns;
+import org.bert.generator.entity.Method;
 import org.bert.generator.entity.Table;
 
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * 生成XML代码
  */
-public class XMLGeneratorCode  implements CodeFactory {
+public class DaoGeneratorCode implements CodeFactory {
 
     @Override
     public String generatorCode(Table table, String type) {
@@ -28,6 +31,28 @@ public class XMLGeneratorCode  implements CodeFactory {
             return this.updateXmlSql(table);
         } else if (GeneratorOptions.COUNT_XML_SQL.equals(type)) {
             return this.countXmlSql(table);
+        } else if (GeneratorOptions.CREATE_ALL_XML_SQL.equals(type)) {
+            return this.createAllXMLSql(table);
+        } else if (GeneratorOptions.CREATE_MAPPER_CODE.equals(type)) {
+            return this.createMapperCode(table);
+        }
+        return "";
+    }
+
+    public String createMapperCode(Table table) {
+        List<Method> methods = table.getMethods();
+        if(methods.size() > 0) {
+            StringBuilder methodList = new StringBuilder();
+            methods.forEach((method) -> {
+                methodList.append("     ").append(method.getResultType())
+                        .append(" ")
+                        .append(method.getMethodName())
+                        .append("(")
+                        .append(method.getParams())
+                        .append(");\n")
+                        .append("\n");
+            });
+            return SQLTemplate.MapperTemplate(methodList.toString(), table.getModelClassName(), table.getXmlName());
         }
         return "";
     }
@@ -66,18 +91,25 @@ public class XMLGeneratorCode  implements CodeFactory {
                 "        from " + table.getTableName() + "\n" +
                 "        where id = #{" + table.getColumns().get(0).getName() + ",jdbcType=INTEGER}\n";
         // selectAll
-        String sql1 =  SQLTemplate.selectXMLTemplate(findAll,
+        String selectAllSQL =  SQLTemplate.selectXMLTemplate(findAll,
                 table.getClazzName(),
-                "selectAll" + table.getXmlName() + "bySql",
+                "selectAll" + table.getXmlName() + "BySql",
                 "java.lang.String");
         // selectByPrimaryKey
-        String sql2 =  SQLTemplate.selectXMLTemplate(selectByPrimaryKey,
+        String selectByPrimaryKeySQL =  SQLTemplate.selectXMLTemplate(selectByPrimaryKey,
                 table.getClazzName(),
                 "selectByPrimaryKey",
         "java.lang.Integer");
-        stringBuilder.append(sql1);
+        stringBuilder.append(selectAllSQL);
         stringBuilder.append("\n");
-        stringBuilder.append(sql2);
+        stringBuilder.append(selectByPrimaryKeySQL);
+        // 存储
+        table.buildMethod("selectAll" + table.getXmlName() + "BySql",
+                "String sql",
+                "List<" + table.getXmlName() + ">");
+        table.buildMethod("selectByPrimaryKey",
+                "Integer id",
+                table.getXmlName());
         // 返回方法组
         return stringBuilder.toString();
     }
@@ -90,6 +122,9 @@ public class XMLGeneratorCode  implements CodeFactory {
     public String deleteXmlSql(Table table) {
         String deleteSql = "    delete from " + table.getTableName() + "\n" +
                 "        where id = #{" + table.getColumns().get(0).getName() + ",jdbcType=INTEGER}\n";
+        table.buildMethod("deleteByPrimaryKey",
+                "Integer id",
+                "Boolean");
         return SQLTemplate.deleteXMLTemplate(deleteSql, "deleteByPrimaryKey", "java.lang.Integer");
     }
 
@@ -129,6 +164,10 @@ public class XMLGeneratorCode  implements CodeFactory {
                 "   values (\n" +
                 values.toString() +
                 ")\n";
+        // 构建sql
+        table.buildMethod("insert",
+                table.getXmlName() + " " + table.getXmlName().toLowerCase(),
+                "Integer");
         return SQLTemplate.insertXMLTemplate(sql,
                 "insert",
                 table.getClazzName());
@@ -158,6 +197,9 @@ public class XMLGeneratorCode  implements CodeFactory {
                 stringBuilder +
                 "        WHERE\n" +
                 "           id = #{" + table.getColumns().get(0).getName() + ",jdbcType=INTEGER}\n";
+        table.buildMethod("updateByPrimaryKey",
+                table.getXmlName() + " " + table.getXmlName().toLowerCase(),
+                "Integer");
         return SQLTemplate.updateXMLTemplate(sql, "updateByPrimaryKey", table.getClazzName());
     }
 
@@ -170,6 +212,37 @@ public class XMLGeneratorCode  implements CodeFactory {
         String countSql= "  select\n" +
                 "       count(*)\n" +
                 "  from " + table.getTableName() + "\n";
+        table.buildMethod("getCounts",
+                "",
+                "Integer");
         return SQLTemplate.selectWithoutParamsXMLTemplate(countSql, "getCounts", "java.lang.Integer");
+    }
+
+    /**
+     * 生成总的XML文件
+     * @param table table数据
+     * @return  数据结果
+     */
+    public String createAllXMLSql(Table table) {
+        StringBuilder sqlBody = new StringBuilder();
+        // 生成SQL集合
+        String sqlParamsXML = this.createParams(table.getColumns());
+        // 生成select语句
+        String selectXML = this.selectXmlSql(table);
+        // 生成delete语句
+        String deleteXML = this.deleteXmlSql(table);
+        // 生成insert语句
+        String insertXML = this.insertXmlSql(table);
+        // 生成update语句
+        String updateXML = this.updateXmlSql(table);
+        // 生成count语句
+        String countXML = this.countXmlSql(table);
+        sqlBody.append(sqlParamsXML)
+                .append(selectXML)
+                .append(deleteXML)
+                .append(insertXML)
+                .append(updateXML)
+                .append(countXML);
+        return SQLTemplate.XMLFileBodyTemplate(sqlBody.toString(), table.getMapperType());
     }
 }

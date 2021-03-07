@@ -19,5 +19,9 @@ public class GeneratorOptions {
 
     public static final String COUNT_XML_SQL = "countXmlSql";
 
+    public static final String CREATE_ALL_XML_SQL = "createAllXMLSql";
+
+    public static final String CREATE_MAPPER_CODE = "createMapperCode";
+
 
 }
